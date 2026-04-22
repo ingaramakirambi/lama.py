@@ -1,21 +1,45 @@
+
 #!/usr/bin/env python3
 import os
+import sys
 import logging
+from groq import Groq
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-from groq import Groq
 
-# Get keys from environment variables
-TELEGRAM_TOKEN = os.environ.get("8623284008:AAGfp8DmrJalCY6JND5GZmHEDYi-z5g683Q")
-GROQ_API_KEY = os.environ.get("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")
+# Try to load .env file if it exists (for local development)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    print("Loaded .env file")
+except ImportError:
+    print("python-dotenv not installed, using system environment variables only")
 
-if not TELEGRAM_TOKEN or not GROQ_API_KEY:
-    print("Missing environment variables!")
-    print("Set TELEGRAM_TOKEN and GROQ_API_KEY")
-    exit(1)
+# Get environment variables
+TELEGRAM_TOKEN = os.getenv("8623284008:AAGfp8DmrJalCY6JND5GZmHEDYi-z5g683Q")
+GROQ_API_KEY = os.getenv("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")
+
+# Debug: Check if variables exist (don't print values for security)
+print(f"TELEGRAM_TOKEN present: {bool(TELEGRAM_TOKEN)}")
+print(f"GROQ_API_KEY present: {bool(GROQ_API_KEY)}")
+
+if not TELEGRAM_TOKEN:
+    print("ERROR: TELEGRAM_TOKEN environment variable is missing!")
+    print("Please set it in your deployment platform's environment variables.")
+    sys.exit(1)
+
+if not GROQ_API_KEY:
+    print("ERROR: GROQ_API_KEY environment variable is missing!")
+    print("Please set it in your deployment platform's environment variables.")
+    sys.exit(1)
 
 # Initialize Groq client
-client = Groq(api_key=GROQ_API_KEY)
+try:
+    client = Groq(api_key=GROQ_API_KEY)
+    print("Groq client initialized successfully")
+except Exception as e:
+    print(f"ERROR initializing Groq client: {e}")
+    sys.exit(1)
 
 # System prompt for uncensored behavior
 SYSTEM_PROMPT = """You are a direct, helpful AI assistant.
@@ -24,7 +48,10 @@ SYSTEM_PROMPT = """You are a direct, helpful AI assistant.
 - Be concise and helpful"""
 
 # Setup logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -60,12 +87,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     """Start the bot"""
-    app = Application.builder().token(TELEGRAM_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    
-    print("Bot is running with Groq Llama...")
-    app.run_polling()
+    try:
+        app = Application.builder().token(TELEGRAM_TOKEN).build()
+        app.add_handler(CommandHandler("start", start))
+        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+        
+        print("Bot is running with Groq Llama...")
+        print(f"Using model: llama-3.3-70b-versatile")
+        app.run_polling()
+    except Exception as e:
+        print(f"ERROR starting bot: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
