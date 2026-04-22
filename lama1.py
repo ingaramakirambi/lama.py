@@ -16,8 +16,8 @@ except ImportError:
     print("python-dotenv not installed, using system environment variables only")
 
 # Get environment variables
-TELEGRAM_TOKEN = os.getenv("8623284008:AAGfp8DmrJalCY6JND5GZmHEDYi-z5g683Q")
-GROQ_API_KEY = os.getenv("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")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Debug: Check if variables exist (don't print values for security)
 print(f"TELEGRAM_TOKEN present: {bool(TELEGRAM_TOKEN)}")
