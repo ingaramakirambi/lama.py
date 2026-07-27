@@ -3,9 +3,22 @@
 import os
 import sys
 import logging
+import threading
+from flask import Flask
 from groq import Groq
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+
+# Flask app for Render health check
+flask_app = Flask(__name__)
+
+@flask_app.route('/')
+def health_check():
+    return "OK", 200
+
+def run_flask():
+    port = int(os.environ.get("PORT", 8080))
+    flask_app.run(host='0.0.0.0', port=port)
 
 # Try to load .env file if it exists (for local development)
 try:
@@ -87,6 +100,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     """Start the bot"""
+    # Start Flask in a separate thread for Render health check
+    print("Starting health check server...")
+    threading.Thread(target=run_flask, daemon=True).start()
+    
     try:
         app = Application.builder().token(TELEGRAM_TOKEN).build()
         app.add_handler(CommandHandler("start", start))
